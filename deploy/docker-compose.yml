@@ -1,0 +1,44 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+    image: home_finder:${HOME_FINDER_VERSION:-latest}
+    restart: always
+    env_file:
+    - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOME_FINDER_HOST: 0.0.0.0
+      HOME_FINDER_DB_HOST: home_finder-db
+      HOME_FINDER_DB_PORT: 3306
+      HOME_FINDER_DB_USER: home_finder
+      HOME_FINDER_DB_PASS: home_finder
+      HOME_FINDER_DB_BASE: home_finder
+
+  db:
+    image: bitnami/mysql:8.0.28
+    hostname: home_finder-db
+    restart: always
+    environment:
+      MYSQL_ROOT_USER: "home_finder"
+      MYSQL_ROOT_PASSWORD: "home_finder"
+      MYSQL_DATABASE: "home_finder"
+      MYSQL_AUTHENTICATION_PLUGIN: "mysql_native_password"
+    healthcheck:
+      test: mysqladmin ping -h localhost
+      interval: 10s
+      timeout: 5s
+      retries: 40
+    volumes:
+    - home_finder-db-data:/bitnami/mysql/data
+
+
+
+volumes:
+  home_finder-db-data:
+    name: home_finder-db-data
